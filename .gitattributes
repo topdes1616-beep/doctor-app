@@ -1,0 +1,3 @@
+*.kt linguist-language=Kotlin
+*.kts linguist-language=Kotlin
+app/src/main/assets/index.html linguist-vendored=true
