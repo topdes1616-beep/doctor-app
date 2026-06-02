@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>البحث عن السيرفر...</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;900&display=swap');
+        body { font-family: 'Tajawal', sans-serif; background-color: #f8fafc; overflow: hidden; }
+        .radar-pulse { animation: radar 2s infinite cubic-bezier(0.4, 0, 0.2, 1); }
+        @keyframes radar { 0% { transform: scale(0.5); opacity: 0.8; } 100% { transform: scale(3.5); opacity: 0; } }
+    </style>
+</head>
+<body class="h-screen w-screen flex flex-col items-center justify-center">
+
+    <div class="relative flex items-center justify-center mb-16">
+        <div class="absolute w-20 h-20 bg-blue-500 rounded-full radar-pulse"></div>
+        <div class="absolute w-20 h-20 bg-blue-400 rounded-full radar-pulse" style="animation-delay: 0.6s"></div>
+        <div class="absolute w-20 h-20 bg-blue-300 rounded-full radar-pulse" style="animation-delay: 1.2s"></div>
+        <div class="relative bg-white w-24 h-24 rounded-full flex items-center justify-center shadow-2xl border-4 border-slate-100 z-10 text-5xl">📡</div>
+    </div>
+
+    <h1 class="text-3xl font-black text-slate-800 mb-3 tracking-tight">جاري البحث عن العيادة</h1>
+    <p class="text-slate-500 mb-10 text-center px-6 font-bold" id="status-text">وضع السرعة القصوى: جاري فحص جميع العناوين...</p>
+
+    <div class="w-72 bg-slate-200 rounded-full h-3 overflow-hidden shadow-inner">
+        <div id="progress-bar" class="bg-blue-600 h-3 rounded-full transition-all duration-300" style="width: 0%"></div>
+    </div>
+
+    <script>
+        const SERVER_PORT = 3000;
+        const TARGET_FILE = "/logo.png";
+        const SUBNETS = ['192.168.1', '192.168.0', '192.168.8'];
+
+        let serverFound = false;
+        let checkedIPs = 0;
+        let totalIPs = SUBNETS.length * 254;
+
+        const progressBar = document.getElementById('progress-bar');
+        const statusText = document.getElementById('status-text');
+
+        async function checkIP(ip) {
+            if (serverFound) return;
+
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 1500);
+
+            const testUrl = `http://${ip}:${SERVER_PORT}`;
+
+            try {
+                await fetch(`${testUrl}${TARGET_FILE}?r=${Math.random()}`, {
+                    mode: 'no-cors',
+                    signal: controller.signal
+                });
+
+                clearTimeout(timeoutId);
+                if (!serverFound) {
+                    serverFound = true;
+                    statusText.innerHTML = `<span class="text-emerald-600 font-black text-lg">تم العثور على النظام! جاري التوجيه...</span>`;
+                    progressBar.style.width = '100%';
+                    progressBar.classList.replace('bg-blue-600', 'bg-emerald-500');
+                    document.querySelectorAll('.radar-pulse').forEach(el => el.style.backgroundColor = '#10b981');
+
+                    setTimeout(() => {
+                        window.location.href = `${testUrl}/doctor.html`;
+                    }, 800);
+                }
+            } catch (error) {
+                clearTimeout(timeoutId);
+                checkedIPs++;
+                if (!serverFound) {
+                    progressBar.style.width = Math.min((checkedIPs / totalIPs) * 100, 100) + '%';
+                }
+            }
+        }
+
+        async function scanNetwork() {
+            const allIPs = [];
+            for (let subnet of SUBNETS) {
+                for (let i = 1; i <= 254; i++) {
+                    allIPs.push(`${subnet}.${i}`);
+                }
+            }
+
+            const scanPromises = allIPs.map(ip => checkIP(ip));
+            await Promise.all(scanPromises);
+
+            if (!serverFound) {
+                statusText.innerHTML = `<span class="text-rose-500 font-bold">لم نتمكن من العثور على السيرفر!</span><br><button onclick="location.reload()" class="bg-slate-800 hover:bg-slate-900 text-white px-6 py-3 rounded-xl shadow-lg active:scale-95 transition-transform mt-4">إعادة البحث 🔄</button>`;
+                document.querySelectorAll('.radar-pulse').forEach(el => el.style.animation = 'none');
+                progressBar.classList.replace('bg-blue-600', 'bg-rose-500');
+            }
+        }
+
+        window.onload = () => {
+            setTimeout(scanNetwork, 500);
+        };
+    </script>
+</body>
+</html>
