@@ -61,7 +61,7 @@
                     progressBar.style.width = '100%';
                     progressBar.classList.replace('bg-blue-600', 'bg-emerald-500');
                     document.querySelectorAll('.radar-pulse').forEach(el => el.style.backgroundColor = '#10b981');
-
+                    
                     setTimeout(() => {
                         window.location.href = `${testUrl}/doctor.html`;
                     }, 800);
@@ -87,10 +87,21 @@
             await Promise.all(scanPromises);
 
             if (!serverFound) {
-                statusText.innerHTML = `<span class="text-rose-500 font-bold">لم نتمكن من العثور على السيرفر!</span><br><button onclick="location.reload()" class="bg-slate-800 hover:bg-slate-900 text-white px-6 py-3 rounded-xl shadow-lg active:scale-95 transition-transform mt-4">إعادة البحث 🔄</button>`;
+                // هنا أضفنا الزر الجديد بدلاً من القديم
+                statusText.innerHTML = `<span class="text-rose-500 font-bold">لم نتمكن من العثور على السيرفر!</span><br><button onclick="forceRetry(this)" class="bg-slate-800 hover:bg-slate-900 text-white px-6 py-3 rounded-xl shadow-lg active:scale-95 transition-transform mt-4">تنشيط الشبكة وإعادة البحث 🔄</button>`;
                 document.querySelectorAll('.radar-pulse').forEach(el => el.style.animation = 'none');
                 progressBar.classList.replace('bg-blue-600', 'bg-rose-500');
             }
+        }
+
+        // دالة إجبار الأندرويد على تنشيط الواي فاي وتحديث الصفحة بالكامل
+        function forceRetry(btn) {
+            btn.innerText = "جاري تنشيط الاتصال...";
+            btn.classList.add("opacity-50", "cursor-not-allowed");
+            
+            setTimeout(() => {
+                window.location.href = window.location.pathname + "?refresh=" + Date.now();
+            }, 2000);
         }
 
         window.onload = () => {
